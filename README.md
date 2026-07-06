@@ -4,7 +4,7 @@
 
 一个**用户文章管理系统**，包含：
 
-- **后端**：Python FastAPI 写的 API 服务
+- **后端**: Python FastAPI 写的 API 服务
 - **前端**：Vue3 写的网页界面
 - **数据库**：SQLite（自动创建，无需安装）
 
