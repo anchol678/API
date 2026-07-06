@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week1 FullStack - FastAPI + Vue3</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ====== 顶部导航 ====== -->
+        <nav class="navbar">
+            <h1>Week1 全栈 API 演示</h1>
+            <div class="nav-right">
+                <template v-if="currentUser">
+                    <span class="user-badge">{{ currentUser.username }}</span>
+                    <span class="ws-status" :class="{ connected: wsConnected }">
+                        WS {{ wsConnected ? '已连接' : '未连接' }}
+                    </span>
+                    <button class="btn btn-outline" @click="logout">退出</button>
+                </template>
+                <template v-else>
+                    <button class="btn btn-outline" @click="showModal = 'login'">登录</button>
+                    <button class="btn btn-primary" @click="showModal = 'register'">注册</button>
+                </template>
+            </div>
+        </nav>
+
+        <!-- ====== 主内容区 ====== -->
+        <main class="container">
+            <!-- 未登录提示 -->
+            <div v-if="!currentUser" class="hero">
+                <h2>FastAPI + Vue3 全栈应用</h2>
+                <p>用户认证 / JWT / CRUD / WebSocket 实时推送</p>
+                <p class="tech-tags">
+                    <span>Python 高阶</span><span>asyncio</span><span>FastAPI</span>
+                    <span>SQLAlchemy 2.0</span><span>Pydantic v2</span><span>JWT</span>
+                    <span>WebSocket</span><span>Vue3</span>
+                </p>
+            </div>
+
+            <!-- 已登录：文章管理 -->
+            <template v-if="currentUser">
+                <!-- 操作栏 -->
+                <div class="toolbar">
+                    <button class="btn btn-primary" @click="openCreateForm">+ 新建文章</button>
+                    <span class="item-count">共 {{ totalItems }} 篇文章</span>
+                </div>
+
+                <!-- WebSocket 通知 -->
+                <div v-if="wsMessage" class="ws-notification">
+                    {{ wsMessage }}
+                </div>
+
+                <!-- 创建/编辑表单 -->
+                <div v-if="editing !== null" class="card form-card">
+                    <h3>{{ editing.id ? '编辑文章' : '新建文章' }}</h3>
+                    <input
+                        v-model="form.title"
+                        type="text"
+                        placeholder="文章标题"
+                        class="input"
+                        maxlength="200"
+                    >
+                    <textarea
+                        v-model="form.content"
+                        placeholder="文章内容..."
+                        class="textarea"
+                        rows="6"
+                        maxlength="10000"
+                    ></textarea>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" @click="saveItem">
+                            {{ editing.id ? '保存修改' : '发布文章' }}
+                        </button>
+                        <button class="btn btn-outline" @click="cancelEdit">取消</button>
+                    </div>
+                </div>
+
+                <!-- 文章列表 -->
+                <div v-if="items.length === 0" class="empty-state">
+                    还没有文章，点击上方按钮创建第一篇
+                </div>
+                <div v-for="item in items" :key="item.id" class="card item-card">
+                    <div class="item-header">
+                        <h3>{{ item.title }}</h3>
+                        <span class="item-date">{{ formatDate(item.created_at) }}</span>
+                    </div>
+                    <p class="item-content">{{ item.content || '(无内容)' }}</p>
+                    <div class="item-actions">
+                        <button class="btn btn-sm btn-outline" @click="editItem(item)">编辑</button>
+                        <button class="btn btn-sm btn-danger" @click="deleteItem(item.id)">删除</button>
+                    </div>
+                </div>
+            </template>
+        </main>
+
+        <!-- ====== 登录/注册弹窗 ====== -->
+        <div v-if="showModal" class="modal-overlay" @click.self="showModal = null">
+            <div class="modal card">
+                <h2>{{ showModal === 'login' ? '登录' : '注册' }}</h2>
+                <div v-if="authError" class="error-msg">{{ authError }}</div>
+                <input
+                    v-model="authForm.username"
+                    type="text"
+                    placeholder="用户名"
+                    class="input"
+                >
+                <input
+                    v-if="showModal === 'register'"
+                    v-model="authForm.email"
+                    type="email"
+                    placeholder="邮箱"
+                    class="input"
+                >
+                <input
+                    v-model="authForm.password"
+                    type="password"
+                    placeholder="密码"
+                    class="input"
+                    @keyup.enter="handleAuth"
+                >
+                <div class="form-actions">
+                    <button class="btn btn-primary" @click="handleAuth" :disabled="authLoading">
+                        {{ authLoading ? '处理中...' : (showModal === 'login' ? '登录' : '注册') }}
+                    </button>
+                    <button class="btn btn-outline" @click="showModal = null">取消</button>
+                </div>
+                <p class="modal-switch">
+                    <template v-if="showModal === 'login'">
+                        没有账号？
+                        <a href="#" @click.prevent="showModal = 'register'; authError = ''">去注册</a>
+                    </template>
+                    <template v-else>
+                        已有账号？
+                        <a href="#" @click.prevent="showModal = 'login'; authError = ''">去登录</a>
+                    </template>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
